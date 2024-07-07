@@ -1,88 +1,149 @@
-<div>
-  <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-    <!-- Columns -->
-    <ng-container matColumnDef="siswaId">
-      <th mat-header-cell *matHeaderCellDef>ID Siswa</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.siswaId }}</td>
-    </ng-container>
+<header>
+  <nav>
+    <div class="navbar">
+      <h1>SIMPLE CRUD</h1>
+      <p-button
+        icon="pi pi-plus-circle"
+        [text]="true"
+        [rounded]="true"
+        size="large"
+        [style]="{ 'margin-right': '1rem' }"
+        severity="success"
+        (click)="displayDialog = true"
+      ></p-button>
+    </div>
+  </nav>
+</header>
 
-    <ng-container matColumnDef="nisn">
-      <th mat-header-cell *matHeaderCellDef>NISN</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.nisn }}</td>
-    </ng-container>
-    
-    <ng-container matColumnDef="nama_lengkap">
-      <th mat-header-cell *matHeaderCellDef>Nama Lengkap</th>
-      <td mat-cell *matCellDef="let siswa" [ngClass]="{'editing': editingSiswa === siswa}">
-        <div *ngIf="editingSiswa !== siswa">{{ siswa.namaLengkap }}</div>
-        <div *ngIf="editingSiswa === siswa">
-          <input type="text" [(ngModel)]="siswa.namaLengkap" placeholder="Nama Lengkap" required>
-        </div>
-      </td>
-    </ng-container>
-    
-    <ng-container matColumnDef="tanggal_lahir">
-      <th mat-header-cell *matHeaderCellDef>Tanggal Lahir</th>
-      <td mat-cell *matCellDef="let siswa" [ngClass]="{'editing': editingSiswa === siswa}">
-        <div *ngIf="editingSiswa !== siswa">{{ siswa.tanggalLahir | date }}</div>
-        <div *ngIf="editingSiswa === siswa">
-          <input type="date" [(ngModel)]="siswa.tanggalLahir">
-        </div>
-      </td>
-    </ng-container>
-    
-    <ng-container matColumnDef="alamat">
-      <th mat-header-cell *matHeaderCellDef>Alamat</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.alamat }}</td>
-    </ng-container>
-    
-    <ng-container matColumnDef="nama_ortu">
-      <th mat-header-cell *matHeaderCellDef>Nama Orang Tua</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.namaOrtu }}</td>
-    </ng-container>
-    
-    <ng-container matColumnDef="telp">
-      <th mat-header-cell *matHeaderCellDef>No. Telepon</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.telp }}</td>
-    </ng-container>
-    
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>Status</th>
-      <td mat-cell *matCellDef="let siswa">{{ siswa.status ? 'Aktif' : 'Tidak Aktif' }}</td>
-    </ng-container>
+<body>
+  <!-- <div class="p-inputgroup">
+    <i class="pi pi-search search-icon" (click)="searchSiswa(searchName)"></i>
+    <input
+      type="text"
+      placeholder="Search by name"
+      pInputText
+      [(ngModel)]="searchName"
+      class="search-input"
+      (keyup.enter)="searchSiswa(searchName)"
+    />
+    <i class="pi pi-times clear-icon" *ngIf="searchName" (click)="clearSearch()"></i>
+  </div> -->
+  <div class="container">
+    <div class="card">
+      <div class="card-body">
+        <p-table
+          [value]="siswa"
+          [paginator]="true"
+          [rows]="7"
+          [globalFilterFields]="['siswaId', 'nisn', 'nama_lengkap', 'tanggal_lahir', 'alamat', 'nam_oOrtu', 'telp', 'foto', 'status', 'tahunAjaran.periode']"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID Siswa</th>
+              <th>NISN</th>
+              <th>Nama Lengkap</th>
+              <th>Tanggal Lahir</th>
+              <th>Alamat</th>
+              <th>Nama Orangtua</th>
+              <th>Telp</th>
+              <th>Foto</th>
+              <th>Status</th>
+              <th>Tahun Ajaran</th>
+              <th>Action</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-siswa>
+            <tr>
+              <td>{{ siswa.siswaId }}</td>
+              <td>{{ siswa.nisn }}</td>
+              <td>{{ siswa.nama_lengkap }}</td>
+              <td>{{ siswa.tanggal_lahir | date: 'yyyy-MM-dd' }}</td>
+              <td>{{ siswa.alamat }}</td>
+              <td>{{ siswa.nama_ortu }}</td>
+              <td>{{ siswa.telp }}</td>
+              <td>{{ siswa.foto }}</td>
+              <td>{{ siswa.status ? 'Active' : 'Inactive' }}</td>
+              <td>{{ siswa.tahunAjaran.periode }}</td>
+              <td>
+                <p-button
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  [style]="{ 'margin-right': '1rem' }"
+                  severity="info"
+                  (click)="editSiswa(siswa)"
+                ></p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  severity="danger"
+                  (click)="deleteSiswa(siswa.siswaId)"
+                ></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+</body>
 
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>Actions</th>
-      <td mat-cell *matCellDef="let siswa">
-        <ng-container *ngIf="editingSiswa !== siswa">
-          <button mat-button (click)="editSiswa(siswa)">Edit</button>
-        </ng-container>
-        <ng-container *ngIf="editingSiswa === siswa">
-          <button mat-button (click)="saveEdit()">Save</button>
-          <button mat-button (click)="cancelEdit()">Cancel</button>
-        </ng-container>
-        <button mat-button (click)="hapusSiswa(siswa.siswaId)">Delete</button>
-      </td>
-    </ng-container>
-
-    <!-- Table Rows -->
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-</div>
-
-<div>
-  <h2>Tambah Siswa</h2>
-  <form [formGroup]="newSiswaForm" (ngSubmit)="saveEdit()">
-    <input type="number" formControlName="taId" placeholder="Tahun Ajaran" required>
-    <input type="text" formControlName="nisn" placeholder="NISN" required>
-    <input type="text" formControlName="namaLengkap" placeholder="Nama Lengkap" required>
-    <input type="date" formControlName="tanggalLahir" placeholder="Tanggal Lahir" required>
-    <textarea formControlName="alamat" placeholder="Alamat" required></textarea>
-    <input type="text" formControlName="namaOrtu" placeholder="Nama Orang Tua" required>
-    <input type="tel" formControlName="telp" placeholder="No. Telepon" required>
-    <!-- Tambahkan form control untuk field lainnya -->
-    
-    <button type="submit" [disabled]="!newSiswaForm.valid">Simpan</button>
-  </form>  
-</div>
+<p-dialog
+  header="{{ isEditing ? 'Edit User' : 'Add User' }}"
+  [(visible)]="displayDialog"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  (onHide)="resetForm()"
+>
+  <form class="form" [formGroup]="siswaForm">
+    <div class="input">
+      <label for="siswaId">ID Siswa</label>
+      <input id="siswaId" type="text" formControlName="siswaId" pInputText />
+    </div>
+    <div class="input">
+      <label for="nisn">NISN</label>
+      <input id="nisn" type="text" formControlName="nisn" pInputText />
+    </div>
+    <div class="input">
+      <label for="nama_lengkap">Nama Lengkap</label>
+      <input id="nama_lengkap" type="text" formControlName="nama_lengkap" pInputText />
+    </div>
+    <div class="input">
+      <label for="tanggal_lahir">Tanggal Lahir</label>
+      <input id="tanggal_lahir" type="text" formControlName="tanggal_lahir" pInputText />
+    </div>
+    <div class="input">
+      <label for="alamat">Alamat</label>
+      <input id="alamat" type="text" formControlName="alamat" pInputText />
+    </div>
+    <div class="input">
+      <label for="nama_ortu">Nama Ortu</label>
+      <input id="nama_ortu" type="text" formControlName="nama_ortu" pInputText />
+    </div>
+    <div class="input">
+      <label for="telp">Telp</label>
+      <input id="telp" type="text" formControlName="telp" pInputText />
+    </div>
+    <div class="input">
+      <label for="foto">Foto</label>
+      <input id="foto" type="text" formControlName="foto" pInputText />
+    </div>
+    <div class="input">
+      <label for="status">Status</label>
+      <input id="status" type="text" formControlName="status" pInputText />
+    </div>
+    <div class="input">
+      <label for="tahunAjaran">Tahun Ajaran</label>
+      <input id="tahunAjaran" type="text" formControlName="tahunAjaran" pInputText />
+    </div>
+    <p-button
+      [style]="{ 'margin-top': '1rem' }"
+      label="Submit"
+      size="small"
+      (click)="isEditing ? updateSiswa() : addSiswa()"
+    ></p-button>
+  </form>
+</p-dialog>

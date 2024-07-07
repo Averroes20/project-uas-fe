@@ -1,6 +1,7 @@
 import { TahunAjaran } from "./tahun-ajaran";
 
-export interface Siswa {
+export interface UpdateSiswa {
+    siswaId: number;
     nisn: string;
     namaLengkap: string;
     tanggalLahir: string;

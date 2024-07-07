@@ -1,9 +1,11 @@
-// siswa.component.ts
-
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Table } from 'primeng/table';
+import { ApiResponse } from '../api-response';
 import { Siswa } from '../siswa';
 import { SiswaService } from '../siswa.service';
+import { TahunAjaran } from '../tahun-ajaran';
+import { UpdateSiswa } from '../update-siswa';
 
 @Component({
   selector: 'app-siswa',
@@ -11,123 +13,162 @@ import { SiswaService } from '../siswa.service';
   styleUrls: ['./siswa.component.css']
 })
 export class SiswaComponent implements OnInit {
-  displayedColumns: string[] = ['siswaId', 'nisn', 'nama_lengkap', 'tanggal_lahir', 'alamat', 'nama_ortu', 'telp', 'status', 'actions'];
-  dataSource: Siswa[] = [];
-  newSiswaForm: FormGroup;
-  editingSiswa: Siswa | null = null;
+  siswaForm: FormGroup;
+  siswa: Siswa[] = [];
+  isEditing = false;
+  selectedSiswa: UpdateSiswa = {} as UpdateSiswa;
+  pageSize = 10;
+  siswaId ?: number;
+  pageNumber = 1;
+  sortBy = 'namaLengkap';
+  sortOrder = 'ASC';
+  searchName: string = '';
+  filteredSiswa: Siswa[] = [];
 
-  constructor(private siswaService: SiswaService, private fb: FormBuilder) {
-    this.newSiswaForm = this.fb.group({
-      taId:['', Validators.required],
-      nisn: ['', Validators.required],
-      namaLengkap: ['', Validators.required],
-      tanggalLahir: ['', Validators.required],
-      alamat: ['', Validators.required],
-      namaOrtu: ['', Validators.required],
-      telp: ['', Validators.required],
-      foto: [''],
-      status: [true]
-    });    
+  constructor(private siswaService: SiswaService) {
+    this.siswaForm = new FormGroup({
+      siswaId: new FormControl(),
+      nisn: new FormControl(''),
+      nama_lengkap: new FormControl(''),
+      tanggal_lahir: new FormControl(''),
+      alamat: new FormControl(''),
+      nama_ortu: new FormControl(''),
+      telp: new FormControl(''),
+      foto: new FormControl(''),
+      status: new FormControl(''),
+      tahunAjaran: new FormControl('')
+    });
   }
 
-  ngOnInit(): void {
-    this.fetchSiswaData(10, 1, 'namaLengkap,asc');
+  displayDialog = false;
+
+  ngOnInit() {
+    this.getSiswa();
   }
 
-  fetchSiswaData(pageSize: number, pageNumber: number, sortBy: string): void {
-    this.siswaService.getSiswa(pageSize, pageNumber, sortBy)
-      .subscribe(
-        response => {
-          this.dataSource = response.data.map((item: any) => ({
-            siswaId: item.siswaId,
-            nisn: item.nisn,
-            namaLengkap: item.nama_lengkap,
-            tanggalLahir: new Date(item.tanggal_lahir), // Konversi timestamp ke Date
-            alamat: item.alamat,
-            namaOrtu: item.nama_ortu,
-            telp: item.telp,
-            foto: item.foto,
-            status: item.status,
-            tahunAjaran: {
-              taId: item.tahunAjaran.taId,
-              periode: item.tahunAjaran.periode,
-              tglMulai: new Date(item.tahunAjaran.tglMulai), // Konversi timestamp ke Date
-              tglAkhir: new Date(item.tahunAjaran.tglAkhir), // Konversi timestamp ke Date
-              kurikulum: item.tahunAjaran.kurikulum
-            }
-          }));
-        },
-        error => {
-          console.error('Error fetching siswa data:', error);
-        }
-      );
+  resetForm() {
+    this.siswaForm.reset();
+    this.isEditing = false;
   }
 
-  editSiswa(siswa: Siswa): void {
-    this.editingSiswa = siswa;
+  clear(table: Table) {
+    table.clear();
   }
 
-  saveEdit(): void {
-    if (this.newSiswaForm.valid && this.editingSiswa) {
-      const updatedSiswa = {
-        ...this.editingSiswa,
-        namaLengkap: this.newSiswaForm.get('namaLengkap')?.value,
-        tanggalLahir: this.newSiswaForm.get('tanggalLahir')?.value,
-        alamat: this.newSiswaForm.get('alamat')?.value,
-        namaOrtu: this.newSiswaForm.get('namaOrtu')?.value,
-        telp: this.newSiswaForm.get('telp')?.value,
-        status: this.newSiswaForm.get('status')?.value
-      };
-  
-      // Lakukan pengiriman data ke service atau backend
-      this.siswaService.updateSiswa(updatedSiswa.siswaId, updatedSiswa)
-        .subscribe(
-          response => {
-            console.log('Siswa berhasil diupdate:', response);
-            this.fetchSiswaData(10, 1, 'namaLengkap,asc');
-            this.cancelEdit();
-          },
-          error => {
-            console.error('Error updating siswa:', error);
-          }
-        );
-    } else {
-      console.error('Form is invalid');
+  getSiswa() {
+    const params = {
+      pageSize: this.pageSize,
+      pageNumber: this.pageNumber,
+      sortBy: this.sortBy,
+      namaLengkap: this.searchName
+    };
+
+    this.siswaService.getSiswa(params).subscribe({
+      next: (response: ApiResponse<Siswa[]>) => {
+        this.siswa = response.data;
+      },
+      error: error => {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  addSiswa() {
+    this.isEditing = false;
+    const siswaDto: Siswa = {
+      nisn: this.siswaForm.value.nisn ?? '',
+      namaLengkap: this.siswaForm.value.nama_lengkap ?? '',
+      tanggalLahir: this.siswaForm.value.tanggal_lahir ?? '',
+      alamat: this.siswaForm.value.alamat ?? '',
+      namaOrtu: this.siswaForm.value.nama_ortu ?? '',
+      telp: this.siswaForm.value.telp ?? '',
+      foto: this.siswaForm.value.foto ?? '',
+      status: this.siswaForm.value.status ?? true,
+      tahunAjaran: this.siswaForm.value.tahunAjaran ?? {} as TahunAjaran
+    };
+
+    this.siswaService.addSiswa(siswaDto).subscribe({
+      next: data => {
+        console.log('Data', data);
+        this.getSiswa();
+        this.displayDialog = false;
+        this.siswaForm.reset();
+      },
+      error: error => {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  editSiswa(siswa: UpdateSiswa) {
+    this.isEditing = true;
+    this.selectedSiswa = siswa;
+    this.siswaForm.setValue({
+      nisn: siswa.nisn,
+      nama_lengkap: siswa.namaLengkap,
+      tanggal_lahir: siswa.tanggalLahir,
+      alamat: siswa.alamat,
+      nama_ortu: siswa.namaOrtu,
+      telp: siswa.telp,
+      foto: siswa.foto,
+      status: siswa.status,
+      tahunAjaran: siswa.tahunAjaran,
+    });
+    this.displayDialog = true;
+  }
+
+  updateSiswa() {
+    const updateSiswa: UpdateSiswa = {
+      siswaId: this.siswaForm.value.siswaId ?? '',
+      nisn: this.siswaForm.value.nisn ?? '',
+      namaLengkap: this.siswaForm.value.nama_lengkap ?? '',
+      tanggalLahir: this.siswaForm.value.tanggal_lahir ?? '',
+      alamat: this.siswaForm.value.alamat ?? '',
+      namaOrtu: this.siswaForm.value.nama_ortu ?? '',
+      telp: this.siswaForm.value.telp ?? '',
+      foto: this.siswaForm.value.foto ?? '',
+      status: this.siswaForm.value.status ?? true,
+      tahunAjaran: this.siswaForm.value.tahunAjaran ?? {} as TahunAjaran
+    };
+
+    const siswaNo = this.selectedSiswa?.siswaId ?? 0;
+    this.siswaService.editSiswa(updateSiswa, siswaNo).subscribe({
+      next: data => {
+        console.log('Data', data);
+        this.getSiswa();
+        this.displayDialog = false;
+        this.siswaForm.reset();
+        this.isEditing = false;
+      },
+      error: error => {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  deleteSiswa(siswaNo: number) {
+    if (siswaNo == null) {
+      console.error('Siswa ID is null');
+      return;
     }
-  }
-  
-  cancelEdit(): void {
-    this.editingSiswa = null;
+
+    this.siswaService.deleteSiswa(siswaNo).subscribe({
+      next: data => {
+        console.log('Data', data);
+        this.getSiswa();
+      },
+      error: error => {
+        console.error('Error:', error);
+      }
+    });
   }
 
-  tambahSiswa(): void {
-    if (this.newSiswaForm.valid) {
-      this.siswaService.createSiswa(this.newSiswaForm.value)
-        .subscribe(
-          response => {
-            console.log('Siswa berhasil ditambahkan:', response);
-            this.fetchSiswaData(10, 1, 'namaLengkap,asc');
-            this.newSiswaForm.reset();
-          },
-          error => {
-            console.error('Error adding siswa:', error);
-          }
-        );
-    } else {
-      console.error('Form is invalid');
-    }
+  searchSiswa() {
+    this.getSiswa();
   }
 
-  hapusSiswa(siswaId: number): void {
-    this.siswaService.deleteSiswa(siswaId)
-      .subscribe(
-        response => {
-          console.log('Siswa berhasil dihapus:', response);
-          this.fetchSiswaData(10, 1, 'namaLengkap,asc');
-        },
-        error => {
-          console.error('Error deleting siswa:', error);
-        }
-      );
+  clearSearch() {
+    this.searchName = '';
+    this.searchSiswa();
   }
 }
